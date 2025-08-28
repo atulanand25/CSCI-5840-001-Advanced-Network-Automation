@@ -1,0 +1,78 @@
+name: lab
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:4.34.2F
+    linux:
+      image: ubuntu
+  nodes:
+    R1:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/R1.cfg
+    R2:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/R2.cfg
+    R3:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/R3.cfg
+    R4:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/R4.cfg
+    R5:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/R5.cfg
+    S1:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/S1.cfg
+    S2:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/S2.cfg
+    S3:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/S3.cfg
+    S4:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/S4.cfg
+    MGMT:
+      kind: arista_ceos
+      startup-config: /tmp/pycharm_project_718/configs/MGMT.cfg
+    H1:
+      kind: linux
+    H2:
+      kind: linux
+    H3:
+      kind: linux
+    H4:
+      kind: linux
+    WWW:
+      kind: linux
+    NMAS:
+      kind: linux
+
+  links:
+    - endpoints:  ["H1:eth1", "S1:eth1"]
+    - endpoints:  ["H2:eth1", "S1:eth2"]
+    - endpoints:  ["H3:eth1", "S2:eth1"]
+    - endpoints:  ["H4:eth1", "S2:eth2"]
+    - endpoints:  ["S1:eth3", "S2:eth3"]
+    - endpoints:  ["S1:eth4", "R1:eth1"]
+    - endpoints:  ["S2:eth4", "R2:eth1"]
+    - endpoints:  ["R1:eth2", "S3:eth2"]
+    - endpoints:  ["R2:eth2", "S4:eth2"]
+    - endpoints:  ["S3:eth1", "S4:eth1"]
+    - endpoints:  ["S3:eth3", "R3:eth2"]
+    - endpoints:  ["S4:eth3", "R4:eth2"]
+    - endpoints:  ["R3:eth3", "R5:eth1"]
+    - endpoints:  ["R4:eth3", "R5:eth2"]
+    - endpoints:  ["R3:eth1", "R4:eth1"]
+    - endpoints:  ["R5:eth3", "WWW:eth1"]
+    - endpoints:  ["MGMT:eth1", "NMAS:eth1"]
+    - endpoints:  ["MGMT:eth2", "R5:eth4"]
+    - endpoints:  ["MGMT:eth3", "R3:eth4"]
+    - endpoints:  ["MGMT:eth4", "R4:eth4"]
+    - endpoints:  ["MGMT:eth5", "S3:eth4"]
+    - endpoints:  ["MGMT:eth6", "S4:eth4"]
+    - endpoints:  ["MGMT:eth7", "R2:eth3"]
+    - endpoints:  ["MGMT:eth8", "R1:eth3"]
+    - endpoints:  ["MGMT:eth9", "S2:eth5"]
+    - endpoints:  ["MGMT:eth10", "S1:eth5"]
