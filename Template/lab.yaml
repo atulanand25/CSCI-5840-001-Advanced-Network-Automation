@@ -60,10 +60,6 @@ topology:
       kind: linux
 
   links:
-    - endpoints:  ["H1:eth1", "S1:eth1"]
-    - endpoints:  ["H2:eth1", "S1:eth2"]
-    - endpoints:  ["H3:eth1", "S2:eth1"]
-    - endpoints:  ["H4:eth1", "S2:eth2"]
     - endpoints:  ["S1:eth3", "S2:eth3"]
     - endpoints:  ["S1:eth4", "R1:eth1"]
     - endpoints:  ["S2:eth4", "R2:eth1"]
@@ -86,3 +82,7 @@ topology:
     - endpoints:  ["MGMT:eth8", "R1:eth3"]
     - endpoints:  ["MGMT:eth9", "S2:eth5"]
     - endpoints:  ["MGMT:eth10", "S1:eth5"]
+    - endpoints: [ "H1:eth1", "S1:eth1" ]
+    - endpoints: [ "H2:eth1", "S1:eth2" ]
+    - endpoints: [ "H3:eth1", "S2:eth1" ]
+    - endpoints: [ "H4:eth1", "S2:eth2" ]
