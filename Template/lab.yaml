@@ -56,8 +56,18 @@ topology:
       kind: linux
     WWW:
       kind: linux
+      exec:
+        - ifconfig eth1 8.8.8.2 netmask 255.255.255.252
+        - ip route del default || true
+        - ip route add default via 8.8.8.1 dev eth1
+        - rm -f /var/www/html/index.html
+        - echo '<html><body>Hello World!</body></html>' > /var/www/html/index.html
+        - a2ensite 000-default.conf
+        - service apache2 start
     NMAS:
       kind: linux
+      exec:
+        - ifconfig eth1 192.168.200.100 netmask 255.255.255.0
 
   links:
     - endpoints:  ["S1:eth3", "S2:eth3"]
