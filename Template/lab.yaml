@@ -89,7 +89,8 @@ topology:
     NMAS:
       kind: linux
       exec:
-        - ifconfig eth1 192.168.200.100 netmask 255.255.255.0
+        - ifconfig eth1 192.168.200.101 netmask 255.255.255.0
+        - ifconfig eth2 192.168.200.100 netmask 255.255.255.0
 
   links:
     - endpoints:  ["S1:eth3", "S2:eth3"]
@@ -118,3 +119,4 @@ topology:
     - endpoints: [ "H2:eth1", "S1:eth2" ]
     - endpoints: [ "H3:eth1", "S2:eth1" ]
     - endpoints: [ "H4:eth1", "S2:eth2" ]
+    - endpoints: [ "NMAS:eth2", "macvlan:ens1" ]
