@@ -1,4 +1,8 @@
 name: lab
+mgmt:
+  network: "clab_mgmt_net"
+  ipv4-subnet: "192.168.200.0/24"
+
 topology:
   kinds:
     arista_ceos:
@@ -10,42 +14,52 @@ topology:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/R1.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.3
     R2:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/R2.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.4
     R3:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/R3.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.7
     R4:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/R4.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.8
     R5:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/R5.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.9
     S1:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/S1.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.10
     S2:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/S2.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.2
     S3:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/S3.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.5
     S4:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/S4.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.6
     MGMT:
       kind: arista_ceos
       startup-config: /home/atul/configs/lab1/MGMT.cfg
       enforce-startup-config: true
+      mgmt-ipv4: 192.168.200.11
     H1:
       kind: linux
       exec:
@@ -86,12 +100,6 @@ topology:
         - echo '<html><body>Hello World!</body></html>' > /var/www/html/index.html
         - a2ensite 000-default.conf
         - service apache2 start
-    NMAS:
-      kind: linux
-      exec:
-        - ifconfig eth1 192.168.200.101 netmask 255.255.255.0
-        - ifconfig eth2 192.168.200.100 netmask 255.255.255.0
-
   links:
     - endpoints:  ["S1:eth3", "S2:eth3"]
     - endpoints:  ["S1:eth4", "R1:eth1"]
@@ -105,7 +113,6 @@ topology:
     - endpoints:  ["R4:eth3", "R5:eth2"]
     - endpoints:  ["R3:eth1", "R4:eth1"]
     - endpoints:  ["R5:eth3", "WWW:eth1"]
-    - endpoints:  ["MGMT:eth1", "NMAS:eth1"]
     - endpoints:  ["MGMT:eth2", "R5:eth4"]
     - endpoints:  ["MGMT:eth3", "R3:eth4"]
     - endpoints:  ["MGMT:eth4", "R4:eth4"]
@@ -119,4 +126,3 @@ topology:
     - endpoints: [ "H2:eth1", "S1:eth2" ]
     - endpoints: [ "H3:eth1", "S2:eth1" ]
     - endpoints: [ "H4:eth1", "S2:eth2" ]
-    - endpoints: [ "NMAS:eth2", "macvlan:ens1" ]
