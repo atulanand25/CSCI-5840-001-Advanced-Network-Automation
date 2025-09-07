@@ -5,7 +5,11 @@ from ncclient.operations.rpc import RPCError
 
 # Shared utilities
 from shared.db_handler import db_connection, insert_interface_stats
-from shared.config_loader import SNMP_HOSTS
+from shared.config_loader import SNMP_HOSTS, STATS_LOG_FILE
+from shared.logger_config import setup_logger
+
+# Setup logger for this script
+logger = setup_logger("SNMPPoller", STATS_LOG_FILE)
 
 def process_interface_details(xml_response: str, ip_address: str):
     """
@@ -52,7 +56,7 @@ def process_interface_details(xml_response: str, ip_address: str):
         if oper_status_elem is not None:
             oper_status = oper_status_elem.text if oper_status_elem is not None else "N/A"
 
-        print(f"[{ip_address}] Interface: {name}, MTU: {mtu_ipv4}, In: {incoming_packets}, Out: {outgoing_packets}, Speed: {port_speed}, Status: {oper_status}")
+        logger.info(f"{ip_address} Interface: {name}, MTU: {mtu_ipv4}, In: {incoming_packets}, Out: {outgoing_packets}, Speed: {port_speed}, Status: {oper_status}")
 
         # Store interface stats
         insert_interface_stats(
@@ -86,20 +90,20 @@ def poll_device_interfaces(ip_address: str):
             </filter>
             """
             response = m.get(netconf_filter)
-            print(f"\n--- Polling {ip_address} ---")
+            logger.info(f"\n--- Polling {ip_address} ---")
             process_interface_details(response.xml, ip_address)
 
     except RPCError as e:
-        print(f"[RPC ERROR] {ip_address}: {e}")
+        logger.info(f"[RPC ERROR] {ip_address}: {e}")
     except Exception as e:
-        print(f"[ERROR] {ip_address}: {e}")
+        logger.info(f"[ERROR] {ip_address}: {e}")
 
 def main():
     """
     Main loop to continuously poll all configured SNMP hosts using NETCONF.
     """
     if not SNMP_HOSTS:
-        print("No SNMP hosts found in configuration.")
+        logger.info("No SNMP hosts found in configuration.")
         return
 
     while True:

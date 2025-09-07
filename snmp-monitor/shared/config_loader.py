@@ -12,6 +12,7 @@ config = configparser.ConfigParser()
 config_path = Path(__file__).parent.parent / 'config.ini'
 POLLER_LOG_FILE = Path(__file__).parent.parent.parent / 'log' / 'poll.log'
 TRAPPER_LOG_FILE = Path(__file__).parent.parent.parent/ 'log' / 'trap.log'
+STATS_LOG_FILE = Path(__file__).parent.parent.parent / 'log' / 'stats.log'
 DB_LOCATION = Path(__file__).parent.parent
 
 config.read(config_path)

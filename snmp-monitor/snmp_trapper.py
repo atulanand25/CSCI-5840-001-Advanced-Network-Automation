@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sqlite3
 import subprocess
 import re
 from shared.db_handler import db_connection, insert_trap_data
