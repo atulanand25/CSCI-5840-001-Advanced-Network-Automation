@@ -1,11 +1,5 @@
-"""
-SNMP Polling Agent for CPU Utilization using EasySNMP.
+#!/usr/bin/env python3
 
-This script periodically polls a predefined list of network devices for their
-CPU utilization. It uses the 'easysnmp' library for simpler and faster
-polling. It calculates the average utilization and records the data into a
-log file and a central SQLite database.
-"""
 import time
 import datetime
 from easysnmp import Session, EasySNMPError
@@ -79,7 +73,7 @@ def main():
                 logger.warning(f"Failed to retrieve data from {host}.")
 
         logger.info(f"Polling cycle complete. Waiting for {POLLER_INTERVAL} seconds.")
-        time.sleep({POLLER_INTERVAL})
+        time.sleep(POLLER_INTERVAL)
 
 if __name__ == "__main__":
     main()

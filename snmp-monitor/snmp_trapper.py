@@ -1,118 +1,38 @@
-"""
-SNMP Trap Listener.
+#!/usr/bin/env python3
 
-This script listens for SNMP traps on port 162. When a specific trap related
-to interface status is received, it parses the trap data, determines the new
-status, and logs the information to a file and a central SQLite database.
-
-NOTE: This version is updated to use 'asyncio' instead of the removed
-'asyncore' module, making it compatible with Python 3.12+.
-"""
-import datetime
-import asyncio
-from pysnmp.carrier.asyncio.dgram import udp
-from pysnmp.entity import engine, config
-from pysnmp.entity.rfc3413 import ntfrcv
-from shared.logger_config import setup_logger
+import sqlite3
+import subprocess
+import re
 from shared.db_handler import db_connection, insert_trap_data
+from shared.config_loader import TRAPPER_LOG_FILE
+from shared.logger_config import setup_logger
 
-# --- Configuration ---
-SNMP_COMMUNITY = "lab"
-LOG_FILE = "/var/log/netman/snmp_traps.log"
 
-# Setup logger for this script
-logger = setup_logger("SNMPTrapper", LOG_FILE)
+logger = setup_logger("SNMPTrapper", TRAPPER_LOG_FILE)
 
-# OIDs we are interested in
-IF_ADMIN_STATUS_OID = "1.3.6.1.2.1.2.2.1.7"
-IF_DESCR_OID = "1.3.6.1.2.1.2.2.1.2"
+# Regex patterns
+IF_DESCR_RE = re.compile(r'interfaces\.ifTable\.ifEntry\.ifDescr\.\d+="([^"]+)"')
+IF_ADMIN_RE = re.compile(r'interfaces\.ifTable\.ifEntry\.ifAdminStatus\.\d+=(\d+)')
 
-# This callback function is synchronous and does not need to be changed.
-def trap_callback(snmpEngine, stateReference, contextEngineId, contextName,
-                  varBinds, cbCtx):
-    """
-    Callback function executed for each received trap.
-    """
-    transportDomain, transportAddress = snmpEngine.msgAndPduDsp.getTransportInfo(stateReference)
-    host = transportAddress[0]
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# Capture SNMP traps
+with subprocess.Popen(
+    ["sudo", "/usr/bin/tcpdump", "-i", "any", "port", "162", "-l"],
+    stdout=subprocess.PIPE, text=True
+) as proc:
+    for line in proc.stdout:
+        if "interfaces.ifTable.ifEntry.ifAdminStatus" in line:
+            parts = line.split()
+            timestamp = parts[0]
+            host = parts[4].split('.')[0:4]
+            host = ".".join(host)
 
-    logger.info(f"Trap received from {host} at {timestamp}")
+            interface_match = IF_DESCR_RE.search(line)
+            admin_match = IF_ADMIN_RE.search(line)
+            if interface_match and admin_match:
+                interface = interface_match.group(1)
+                status = "UP" if admin_match.group(1) == "1" else "DOWN"
 
-    trap_data = {
-        'host': host,
-        'timestamp': timestamp,
-        'interface': 'N/A',
-        'status': 'UNKNOWN'
-    }
+                insert_trap_data(db_connection, timestamp, host, interface, status)
 
-    # Iterate through the variable bindings in the trap
-    for oid, val in varBinds:
-        oid_str = str(oid)
-        val_str = str(val.prettyPrint())
-
-        if IF_DESCR_OID in oid_str:
-            trap_data['interface'] = val_str
-            logger.debug(f"[{host}] Parsed Interface: {val_str}")
-
-        elif IF_ADMIN_STATUS_OID in oid_str:
-            if val_str == "1":
-                trap_data['status'] = "UP"
-            else:
-                trap_data['status'] = "DOWN"
-            logger.debug(f"[{host}] Parsed Status: {trap_data['status']} (Raw value: {val_str})")
-
-    # If we have meaningful data, log it to the database
-    if trap_data['interface'] != 'N/A' and trap_data['status'] != 'UNKNOWN':
-        if db_connection:
-            insert_trap_data(
-                db_connection,
-                trap_data['timestamp'],
-                trap_data['host'],
-                trap_data['interface'],
-                trap_data['status']
-            )
-        else:
-            logger.error(f"[{host}] Cannot log trap to DB: Database connection is not available.")
-
-# The main function is now an 'async' function
-async def main():
-    """Main listening function."""
-    if not db_connection:
-        logger.critical("Database connection failed. Trapper cannot start.")
-        return
-
-    snmpEngine = engine.SnmpEngine()
-
-    # Transport setup: listening on UDP port 162
-    config.addTransport(
-        snmpEngine,
-        udp.domainName,
-        udp.UdpTransport().openServerMode(('0.0.0.0', 162))
-    )
-
-    config.addV1System(snmpEngine, 'my-area', SNMP_COMMUNITY)
-
-    ntfrcv.NotificationReceiver(snmpEngine, trap_callback)
-
-    logger.info("SNMP Trap Listener started on port 162.")
-    logger.info("Waiting for traps...")
-
-    try:
-        # This will run the dispatcher indefinitely
-        snmpEngine.transportDispatcher.jobStarted(1)
-        # Create a future that never completes, keeping the script running
-        await asyncio.Future()
-    except Exception as e:
-        logger.error(f"An error occurred in the trap listener: {e}", exc_info=True)
-    finally:
-        snmpEngine.transportDispatcher.closeDispatcher()
-        logger.info("SNMP Trap Listener stopped.")
-
-if __name__ == "__main__":
-    try:
-        # Use asyncio.run() to start the asynchronous main function
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Shutting down listener.")
-
+                # Log based on status
+                logger.info(f"Interface {interface} is {status} on host {host}")
