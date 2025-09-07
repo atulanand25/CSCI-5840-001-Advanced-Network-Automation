@@ -67,10 +67,28 @@ def setup_database(conn):
         interface_status TEXT
     );
     """
+
+    stats_table_sql = """
+    CREATE TABLE IF NOT EXISTS interface_stats(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip_address TEXT,
+        interface_name TEXT,
+        mtu TEXT,
+        incoming_packets TEXT,
+        outgoing_packets TEXT,
+        speed TEXT,
+        interface_status TEXT,
+        timestamp DATETIME DEFAULT
+        CURRENT_TIMESTAMP, 
+        UNIQUE(ip_address, interface_name)
+    );
+    """
+
     try:
         cursor = conn.cursor()
         cursor.execute(cpu_table_sql)
         cursor.execute(trap_table_sql)
+        cursor.execute(stats_table_sql)
         conn.commit()
         logger.info("Database tables 'cpu_utilization' and 'snmp_traps' are ready.")
     except Error as e:
@@ -116,7 +134,8 @@ def insert_trap_data(conn, timestamp, host, interface, status):
         bool: True if insertion was successful, False otherwise.
     """
     sql = '''INSERT INTO snmp_traps(timestamp, host, interface, interface_status)
-             VALUES(?, ?, ?, ?)'''
+             VALUES(?, ?, ?, ?)
+          '''
     try:
         cursor = conn.cursor()
         cursor.execute(sql, (timestamp, host, interface, status))
@@ -126,6 +145,51 @@ def insert_trap_data(conn, timestamp, host, interface, status):
     except Error as e:
         logger.error(f"Failed to insert trap data for {host}: {e}", exc_info=True)
         return False
+
+def insert_interface_stats(conn, ip_address, interface_name, mtu, incoming_packets, outgoing_packets, speed, interface_status):
+    """
+    Insert or replace interface statistics into the database.
+
+    Args:
+        conn (sqlite3.Connection): The active database connection.
+        ip_address (str): IP address of the device.
+        interface_name (str): Interface name (e.g., 'GigabitEthernet0/0').
+        mtu (str): MTU value.
+        incoming_packets (str): Number of incoming packets.
+        outgoing_packets (str): Number of outgoing packets.
+        speed (str): Speed of the interface.
+        interface_status (str): Operational status of the interface.
+
+    Returns:
+        bool: True if the operation was successful, False otherwise.
+    """
+    sql = '''
+        INSERT OR REPLACE INTO interface_stats (
+            id, ip_address, interface_name, mtu,
+            incoming_packets, outgoing_packets, speed,
+            interface_status, timestamp
+        )
+        VALUES (
+            (SELECT id FROM interface_stats WHERE ip_address = ? AND interface_name = ?),
+            ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+        )
+    '''
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, (
+            ip_address, interface_name,  # For subquery
+            ip_address, interface_name, mtu,
+            incoming_packets, outgoing_packets,
+            speed, interface_status
+        ))
+        conn.commit()
+        logger.debug(f"Inserted interface stats for {ip_address} - {interface_name}")
+        return True
+    except Error as e:
+        logger.error(f"Failed to insert stats for {ip_address} - {interface_name}: {e}", exc_info=True)
+        return False
+
+
 
 # --- One-time Setup ---
 # When this module is imported, it will automatically try to connect to the
